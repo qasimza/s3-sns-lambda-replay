@@ -82,10 +82,10 @@ class LambdaWorker(Process):
                     print(f"Worker {self.id} - Attempt {results['retries']}/5")
 
             # Report the results back to the master process
-            result_queue.put(results)
+            self.result_queue.put(results)
 
         # Sentinel to let the master know the worker is done
-        result_queue.put(None)
+        self.result_queue.put(None)
 
 def s3_object_generator(bucket, prefix=''):
     """ Generate objects in an S3 bucket."""
