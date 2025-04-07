@@ -3,8 +3,24 @@ import boto3
 import questionary
 import json
 s3 = boto3.client('s3')
-lambda_client = boto3.client('lambda')
 
+def get_lambda_client():
+    sts_client = boto3.client('sts')
+    assumed_role = sts_client.assume_role(
+        RoleArn='arn:aws:iam::761018871394:role/ProdAccountAccessRole',
+        RoleSessionName='S3LambdaReplaySession'
+    )
+    credentials = assumed_role['Credentials']
+    
+    # Create a Lambda client with the assumed role credentials
+    lambda_client = boto3.client(
+        'lambda',
+        aws_access_key_id=credentials['AccessKeyId'],
+        aws_secret_access_key=credentials['SecretAccessKey'],
+        aws_session_token=credentials['SessionToken'],
+        region_name='us-west-2'  # Specify the region where your Lambda functions are
+    )
+    return lambda_client
 class ReplayConfig(object):
     s3_bucket = None
     s3_paths = None
@@ -139,6 +155,7 @@ Bypass            : {self.bypass}
     def lambda_function_generator(self):
         opts = {}
         while True:
+            lambda_client = get_lambda_client()
             resp = lambda_client.list_functions(**opts)
             contents = resp['Functions']
             for obj in contents:

@@ -18,11 +18,9 @@ import questionary
 import time
 import sys
 
-from util.config import ReplayConfig
+from util.config import ReplayConfig, get_lambda_client
 
 s3 = boto3.client('s3')
-lambda_client = boto3.client('lambda')
-
 class LambdaWorker(Process):
     def __init__(self, job_queue, result_queue, id, total_jobs):
         super(LambdaWorker, self).__init__()
@@ -51,6 +49,7 @@ class LambdaWorker(Process):
 
             while True:
                 try:
+                    lambda_client = get_lambda_client()
                     response = lambda_client.invoke(
                         FunctionName=job['lambda'],
                         Payload=json.dumps(job['data']).encode('utf-8')
